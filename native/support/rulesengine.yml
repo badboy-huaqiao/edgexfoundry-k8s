@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-kuiper
+spec:
+  selector:
+    app: edgex-kuiper
+  ports:
+  - name: http
+    port: 48075
+    protocol: TCP
+    targetPort: 48075
+  - name: http1
+    port: 20498
+    protocol: TCP
+    targetPort: 20498
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-kuiper
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-kuiper
+  template:
+    metadata:
+      labels: 
+        app: edgex-kuiper
+    spec:
+      hostname: edgex-kuiper
+      containers:
+      - name: edgex-kuiper
+        image: emqx/kuiper:0.4.2-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 48075
+        - name: http1
+          protocol: TCP
+          containerPort: 20498
+        env:
+          - name: KUIPER_CONSOLE_LOG
+            value: "true"
+          - name: EDGEX_SERVER
+            value: "edgex-app-service-configurable-rules"
+          - name: EDGEX_SERVICE_SERVER
+            value: "http://edgex-core-data:48080"
+          - name: EDGEX_TOPIC
+            value: "events"
+          - name: EDGEX_PROTOCOL
+            value: "tcp"
+          - name: EDGEX_PORT
+            value: "5566"

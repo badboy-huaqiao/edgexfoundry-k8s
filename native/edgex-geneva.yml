@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-variables
+data:
+  EDGEX_SECURITY_SECRET_STORE: "false"
+  Registry_Host: "localhost"
+  Clients_CoreData_Host: "localhost"
+  Clients_Data_Host: "localhost"
+  Clients_Notifications_Host: "localhost"
+  Clients_Metadata_Host: "localhost"
+  Clients_Command_Host: "localhost"
+  Clients_Scheduler_Host: "localhost"
+  Clients_RulesEngine_Host: "localhost"
+  Clients_VirtualDevice_Host: "localhost"
+  Databases_Primary_Host: "localhost"
+  # Required in case old configuration from previous release used.
+  # Change to "true" if re-enabling logging service for remote logging
+  Logging_EnableRemote: "false"
+  #  Clients_Logging_Host: edgex-support-logging # un-comment if re-enabling logging service for remote logging
+  Service_Timeout: "60000"
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgexfoundry
+spec:
+  type: NodePort
+  selector:
+    app: edgexfoundry
+  ports:
+  - name: tcp-8500
+    port: 8500
+    protocol: TCP
+    targetPort: 8500
+    nodePort: 30085
+  - name: tcp-8400
+    port: 8400
+    protocol: TCP
+    targetPort: 8400
+    nodePort: 30084
+  - name: ui
+    port: 4000
+    protocol: TCP
+    targetPort: 4000
+    nodePort: 30040
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgexfoundry
+spec:
+  selector:
+    matchLabels: 
+      app: edgexfoundry
+  template:
+    metadata:
+      labels: 
+        app: edgexfoundry
+    spec:
+      volumes:
+         - name: consul-config
+           hostPath:
+             path: /consul/config
+             type: DirectoryOrCreate
+         - name: consul-data
+           hostPath:
+             path: /consul/data
+             type: DirectoryOrCreate
+         - name: db-data
+           hostPath:
+             path: /data
+             type: DirectoryOrCreate
+      containers:
+      - name: edgex-core-consul
+        image: edgexfoundry/docker-edgex-consul:1.2.0
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: EDGEX_DB
+            value: "redis"
+          - name: EDGEX_SECURE
+            value: "false"
+        ports:
+        - name: tcp-8500
+          protocol: TCP
+          containerPort: 8500
+        - name: tcp-8400
+          protocol: TCP
+          containerPort: 8400
+        volumeMounts:
+        - name: consul-config
+          mountPath: /consul/config
+        - name: consul-data
+          mountPath: /consul/data
+
+      - name: edgex-redis
+        image: redis:5.0.8-alpine
+        imagePullPolicy: IfNotPresent
+        envFrom: 
+        - configMapRef:
+            name: common-variables
+        env:
+          - name: EDGEX_DB
+            value: "redis"
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: db-data
+          mountPath: /data
+
+      - name: edgex-core-metadata
+        image: edgexfoundry/docker-core-metadata-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        env: 
+        - name: Registry_Host
+          value: "localhost"
+        envFrom: 
+        - configMapRef:
+            name: common-variables
+        env: 
+        - name: Service_Host
+          value: "localhost"
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 48081
+
+      - name: edgex-core-data
+        image: edgexfoundry/docker-core-data-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        envFrom: 
+        - configMapRef:
+            name: common-variables
+        env: 
+        - name: Registry_Host
+          value: "localhost"
+        ports:
+        - name: tcp-48080
+          protocol: TCP
+          containerPort: 48080
+        - name: tcp-5563
+          protocol: TCP
+          containerPort: 5563
+
+      - name: edgex-ui-go
+        image: edgexfoundry/docker-edgex-ui-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        envFrom: 
+        - configMapRef:
+            name: common-variables
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 4000
+        

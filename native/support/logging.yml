@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-support-logging
+spec:
+  selector:
+    app: edgex-support-logging
+  ports:
+  - name: http
+    port: 48061
+    protocol: TCP
+    targetPort: 48061
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-support-logging
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-support-logging
+  template:
+    metadata:
+      labels: 
+        app: edgex-support-logging
+    spec:
+      hostname: edgex-support-logging
+      containers:
+      - name: edgex-support-logging
+        image: edgexfoundry/docker-support-logging-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: Service_Host
+            value: "edgex-support-logging"
+          - name: Writable_Persistence
+            value: "file" 
+          - name: Databases_Primary_Type
+            value: "file" 
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Clients_CoreData_Host
+            value: "edgex-core-metadata"
+          - name: Databases_Primary_Type
+            value: "mongodb"
+          - name: Databases_Primary_Host
+            value: "edgex-mongo"
+          - name: Databases_Primary_Port
+            value: "27017"
+          - name: Logging_EnableRemote
+            value: "false"
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 48061

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-device-snmp
+spec:
+  selector:
+    app: edgex-device-snmp
+  ports:
+  - name: http
+    port: 49993
+    protocol: TCP
+    targetPort: 49993
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-device-snmp
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-device-snmp
+  template:
+    metadata:
+      labels: 
+        app: edgex-device-snmp
+    spec:
+      hostname: edgex-device-snmp
+      containers:
+      - name: edgex-device-snmp
+        image: edgexfoundry/docker-device-snmp-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 49993
+        env:
+          - name: Service_Host
+            value: "edgex-device-snmp"
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Logging_EnableRemote
+            value: "false"
+          - name: Clients_Logging_Host
+            value: "edgex-support-logging"

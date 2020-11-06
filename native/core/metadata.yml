@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-core-metadata
+spec:
+  selector:
+    app: edgex-core-metadata
+  ports:
+  - name: http
+    port: 48081
+    protocol: TCP
+    targetPort: 48081
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-core-metadata
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-core-metadata
+  template:
+    metadata:
+      labels: 
+        app: edgex-core-metadata
+    spec:
+      hostname: edgex-core-metadata
+      containers:
+      - name: edgex-core-metadata
+        image: edgexfoundry/docker-core-metadata-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 48081
+        env:
+          - name: Service_Host
+            value: "edgex-core-metadata"
+          - name: Service_Timeout
+            value: "20000" 
+          - name: Notifications_Sender
+            value: "edgex-core-metadata"  
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Databases_Primary_Type
+            value: "mongodb"
+          - name: Databases_Primary_Host
+            value: "edgex-mongo"
+          - name: Databases_Primary_Port
+            value: "27017"
+          - name: Logging_EnableRemote
+            value: "false"

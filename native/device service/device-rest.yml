@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-device-rest
+spec:
+  selector:
+    app: edgex-device-rest
+  ports:
+  - name: http
+    port: 49986
+    protocol: TCP
+    targetPort: 49986
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-device-rest
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-device-rest
+  template:
+    metadata:
+      labels: 
+        app: edgex-device-rest
+    spec:
+      hostname: edgex-device-rest
+      containers:
+      - name: edgex-device-rest
+        image: edgexfoundry/docker-device-rest-go:1.1.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 49986
+        env:
+          - name: Service_Host
+            value: "edgex-device-rest"
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Logging_EnableRemote
+            value: "false"
+          - name: Clients_Logging_Host
+            value: "edgex-support-logging"

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-device-mqtt
+spec:
+  selector:
+    app: edgex-device-mqtt
+  ports:
+  - name: http
+    port: 49982
+    protocol: TCP
+    targetPort: 49982
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-device-mqtt
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-device-mqtt
+  template:
+    metadata:
+      labels: 
+        app: edgex-device-mqtt
+    spec:
+      hostname: edgex-device-mqtt
+      containers:
+      - name: edgex-device-mqtt
+        image: edgexfoundry/docker-device-mqtt-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 49982
+        env:
+          - name: Service_Host
+            value: "edgex-device-mqtt"
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Logging_EnableRemote
+            value: "false"
+          - name: Clients_Logging_Host
+            value: "edgex-support-logging"

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-core-data
+spec:
+  selector:
+    app: edgex-core-data
+  ports:
+  - name: tcp-8500
+    port: 5563
+    protocol: TCP
+    targetPort: 5563
+  - name: tcp-8400
+    port: 48080
+    protocol: TCP
+    targetPort: 48080
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-core-data
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-core-data
+  template:
+    metadata:
+      labels: 
+        app: edgex-core-data
+    spec:
+      hostname: edgex-core-data
+      containers:
+      - name: edgex-core-data
+        image: edgexfoundry/docker-core-data-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: tcp-48080
+          protocol: TCP
+          containerPort: 48080
+        - name: tcp-5563
+          protocol: TCP
+          containerPort: 5563
+        env:
+          - name: Service_Host
+            value: "edgex-core-data"
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Databases_Primary_Type
+            value: "mongodb"
+          - name: Databases_Primary_Host
+            value: "edgex-mongo"
+          - name: Databases_Primary_Port
+            value: "27017"
+          - name: Logging_EnableRemote
+            value: "false"

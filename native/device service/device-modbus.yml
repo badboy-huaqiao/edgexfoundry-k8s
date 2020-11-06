@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edgex-device-modbus
+spec:
+  selector:
+    app: edgex-device-modbus
+  ports:
+  - name: http
+    port: 49991
+    protocol: TCP
+    targetPort: 49991
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: edgex-device-modbus
+spec:
+  selector:
+    matchLabels: 
+      app: edgex-device-modbus
+  template:
+    metadata:
+      labels: 
+        app: edgex-device-modbus
+    spec:
+      hostname: edgex-device-modbus
+      containers:
+      - name: edgex-device-modbus
+        image: edgexfoundry/docker-device-modbus-go:1.2.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 49991
+        env:
+          - name: Service_Host
+            value: "edgex-device-modbus"
+          - name: EDGEX_SECURITY_SECRET_STORE
+            value: "false"
+          - name: Registry_Host
+            value: "edgex-core-consul"
+          - name: Logging_EnableRemote
+            value: "false"
+          - name: Clients_Logging_Host
+            value: "edgex-support-logging"
